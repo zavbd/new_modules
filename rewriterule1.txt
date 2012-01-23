@@ -1,0 +1,338 @@
+Ultimate Guide to htaccess and mod_rewrite
+by Patrick Altoft on July 14, 2007 / 59 responses
+
+ Often described as ¡Èvoodoo¡É by frustrated webmasters the use of mod_rewrite and htaccess files is one of the more advanced tasks a web developer has to face.
+
+The good news is that unless you are looking for really advanced solutions you don¡Çt have to fully understand how they work to use them on your website. Most of the htaccess and mod_rewrite tips on this page can simply be cut and pasted into a text file and uploaded to your server.
+Over the last few years I¡Çve given the same htaccess tips to hundreds of webmasters so I decided to create a page with all the common uses.
+
+htaccess is a configuration file that controls Apache web servers, mod_rewrite is a rewrite engine used by web servers to modify urls before they load.
+
+The htaccess file is a text file called .htaccess ? htaccess is the file extension, there is no filename. Normally it resides in the main root directory on your server but you can also create individual htaccess files for different directories on your site.
+
+Canonicalization
+The easiest htaccess trick is to make sure that your site doesn¡Çt have any canonicalization issues on the homepage.
+
+A lot of websites suffer from poor search engine rankings by having a number of different versions of the homepage, for example:
+
+http://www.yoursite.com
+
+http://yoursite.com
+
+http://www.yoursite.com/index.html
+
+http://yoursite.com/index.html
+
+These pages are all seen as different urls, despite them having exactly the same content in most cases. Google has got better at deciding which version to use over the past 12 months but you can still run into problems.
+
+To solve this issue simply add the following to your htaccess file:
+
+Options +FollowSymLinks
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^yoursite.com
+RewriteRule (.*) http://www.yoursite.com/$1 [R=301,L]
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /index\.html\ HTTP/
+RewriteRule ^index\.html$ http://www.yoursite.com/ [R=301,L]
+
+
+This will redirect all versions to http://www.yoursite.com
+
+Changing html files to php
+Sometimes you might have a static html website and need to use php code on the html pages. Rather than redirecting all your html pages to the equivalent php versions you simply need to tell your server to parse html files as if they were php.
+
+
+AddHandler application/x-httpd-php .html
+
+
+This works with any files so if you want to create dynamic xml or asp files that behave like php files you simply edit the code as required:
+
+
+AddHandler application/x-httpd-php .xml
+AddHandler application/x-httpd-php .asp
+
+
+Error pages
+Custom error pages can be set up in cpanel fairly easily, if you want to create a custom error page in htaccess instead use this line:
+
+
+ErrorDocument 404 http://www.yoursite.com/404.php
+
+
+Directory Indexes
+To avoid Google indexing your directory indexes you might need to specify an index page for your directories. This is not required on some servers.
+
+
+DirectoryIndex index.php3
+
+
+My preference is to redirect the directory index page to either the homepage or another suitable page. For example www.yoursite.com/images/ can normally be redirected to www.yoursite.com and www.yoursite.com/forum/ can normally be redirected to www.yoursite.com/forum/index.php
+
+Redirecting pages
+A nice simple use of htaccess is to redirect one page to another:
+
+
+redirect 301 /old-page.php http://www.yoursite.com/new-page.php
+
+
+Sending your feed to Feedburner
+If you want to switch your feed to the Feedburner service you will need to redirect your current feed to the new http://feeds.feedburner.com/yourfeed location.
+
+The redirect needs to apply to all users except the Feedburner spider:
+
+
+RewriteCond %{HTTP_USER_AGENT} !FeedBurner
+RewriteRule ^your-feed\.xml$ http://feeds.feedburner.com/your-feed [R,L]
+
+
+Advanced hotlink protection
+If you want to block other websites from hotlinking your images, but allow indexing of your images in the Google, Yahoo and MSN image search engines, you should use the code below:
+
+
+RewriteEngine on
+RewriteCond %{HTTP_REFERER} .
+RewriteCond %{HTTP_REFERER} !^http://([^.]+\.)?yoursite\. [NC]
+RewriteCond %{HTTP_REFERER} !google\. [NC]
+RewriteCond %{HTTP_REFERER} !search\?q=cache [NC]
+RewriteCond %{HTTP_REFERER} !msn\. [NC]
+RewriteCond %{HTTP_REFERER} !yahoo\. [NC]
+RewriteCond %{REQUEST_URI} !^/hotlinker\.gif$
+RewriteRule \.(gif|jpg|png)$ /hotlinker.gif [NC,L]
+
+
+The hotlinker.gif image is a custom image that you have created. I suggest using something like ¡ÈThis image was hotlinked from www.yoursite.com¡É and your logo.
+
+My personal preference is to allow hotlinking but to implement a solution to make use of Google Images and hotlinkers to build links to your site.
+
+Create beautiful url¡Çs with mod_rewrite
+The Apache rewrite engine is mainly used to turn dynamic url¡Çs such as www.yoursite.com/product.php?id=123 into static and user friendly url¡Çs such as www.yoursite.com/product/123
+
+
+RewriteEngine on
+RewriteRule ^product/([^/\.]+)/?$ product.php?id=$1 [L]
+
+
+Another example, rewrite from:
+
+www.yoursite.com/script.php?product=123 to www.yoursite.com/cat/product/123/
+
+
+RewriteRule cat/(.*)/(.*)/$ /script.php?$1=$2
+
+
+Removing query strings
+Some websites like to link to you by adding an query string, for example I could link to www.yoursite.com/index.php?source=blogstorm just so you know where your traffic came from. This creates duplicate content issue for your site so you really need to redirect back to your homepage:
+
+
+RewriteCond %{QUERY_STRING} ^source= RewriteRule (.*) /$1? [R=301,L]
+
+Mod_rewrite is an Apache module that can be accessed from .htaccess files to perform all kinds of complicated URL manipulation. A few months ago I posted an article called Beat Your Website into Submission with .htaccess explaining how to use several .htaccess features to do helpful tricks; but I didn't really touch on mod_rewrite or RewriteRule. Since then I was involved in a project that required extensive use of mod_rewrite and I've come to truly appreciate its power and usefulness. The main mod_rewrite function, RewriteRule, is powered by regular expressions. Regular expressions are used to search blocks of text for specific patterns. I barely have enough room in this article to scratch the surface of regular expressions; so if you need more detail in that area I recommend this website. For the purposes of this tutorial, though, I'll be sticking to commonly used URL rewriting tasks.
+
+The Setup
+Before you start messing with RewriteRule, you need to make sure your .htaccess file is ready for tinkering. The first two lines in the sample code below activate the mod_rewrite module. The third line prevents more than ten redirects per browser call. If this line is left out, a misplaced "+" or "." in your regular expression could create an infinite loop that will grind your server to a halt. Unfortunately, I didn't discover this little snippet until I was about half way through my project. But you can avoid my mistake. Put this at the top of your .htaccess file.
+
+Options +FollowSymlinks
+RewriteEngine on
+RewriteOptions MaxRedirects=10
+RewriteRule Basics
+With mod_rewrite there are a number of powerful functions at your disposal. You saw RewriteEngine and RewriteOptions in the first section. These functions set the stage for the star of the show?RewriteRule. RewriteRule can compare a URL against just able any criteria and rewrite the url according to your specifications. As I mentioned, RewriteRule uses regular expressions to search a URL for character patterns. Here's a helpful example that matches any URL that ends with .htm and redirects it to the same file with the extension .php. This would be helpful if you were moving your website from a static HTML site to a PHP driven site.
+
+Options +FollowSymlinks
+RewriteEngine on
+RewriteOptions MaxRedirects=10
+RewriteRule ^(.*).htm$ $1.php [NC] 
+On the RewriteRule line the "^" denotes the beginning of the regular expression and the "$" denotes the end. The [NC] at the end of the RewriteRule line keeps the command from being case-sensitive.
+
+Redirecting the Right Way
+Lots of web designers know that .htaccess can be used to redirect a browser to another page. But very few know much beyond the absolute basics and even fewer know the right code to send with the redirect. For search engine purposes it's important that you don't get these codes mixed up. All of the redirect codes are in the 300 range. W3.org has an extensive guide to redirect codes but here are the ones most commonly used:
+
+301 Permanently Moved
+Use this code when you have content that has permanently moved to a new URL.
+302 Found
+Use this code when you have content that is temporarily residing at a different URL.
+307
+The same as 302 with some additional options
+Redirecting Your Website to a New Domain
+Whenever you change the domain of your website, it's important to redirect properly to the new domain name to avoid a double content penalty from search engines. For example, if you simply park your old domain on top of your new domain, some search engines will see this as double content. Here's a RewriteRule that will redirect correctly with a 301 (Permanently Moved) code.
+
+Options +FollowSymlinks
+RewriteEngine on
+RewriteOptions MaxRedirects=10
+RewriteRule ^(.+).php$ http://new_domain.com/$1.php [R=301,NC]
+Sometime, when you move a website to a new domain, the names of the pages don't necessarily stay the same. To redirect a page on one domain to a page with a different name on a new domain, you would add an additional ReWriteRule line to your .htaccess file that would look like this: 
+
+RewriteRule ^old_page.php$ http://new_domain.com/new_page.php [R=301,NC] 
+Creating Dynamic Directories in the Root of Your Site
+The RewriteRule will parse the URL request as it comes in from the browser...Lots of social sites such as MySpace.com allow you to access certain personal pages in a url format that looks like this: myspace.com/myusername. Obviously, MySpace doesn't manually create a new directory every time a new member joins. Achieving this effect is simple with RewriteRule. But in order to make this example work, all of the pages in your website will need to be moved into a new directory in the root of your site (eg. mydomain.com/pages). There should be no pages in the root directory of the site at all. The RewriteRule will parse the URL request as it comes in from the browser and redirect accordingly. The code below will search an incoming URL for a simple user name that is between 6 and 12 characters long. If no user name is present, the browser will be redirected to the index.php page in the "pages" directory. A second .htaccess file (listed after the one below) should be created and uploaded into the "pages" directory. This .htaccess file will block the RewriteRules from the first .htaccess files.
+
+Options +FollowSymlinks
+RewriteEngine on
+RewriteOptions MaxRedirects=10
+
+RewriteRule ^(.{6,12})$ http://mydomain.com/pages/users/index.php?user_name=$1 [NC]
+RewriteRule ^$ http://mydomain.com/pages/index.php [R=301,NC] 
+The first RewriteRule redirects any URL with a six to twelve character user name to the the user page and passes the user name in as a variable. The second RewriteRule checks for incoming URLs that have no user name (ie. http://mydomain.com/). When this occurs, the visitor is redirected to the home page in the "pages" directory. This is the .htaccess file that should be placed in the "pages" directory.
+
+Options +FollowSymlinks
+RewriteEngine off
+Beautifying and Optimizing Your URLs
+Long URLs with multiple embedded variables are ugly, awkward to copy and paste, and difficult for search engines to index. With RewriteRule, though, you can turn a URL that looks like this: http://mydomain.com/blog.php?category=news&month=05&year=2008 into this: http://mydomain.com/news/05/2008. Much more attractive, right? Here's the code:
+
+Options +FollowSymlinks
+RewriteEngine on
+RewriteOptions MaxRedirects=10
+
+RewriteRule ^blog/([^/]+)/([^/]+)$ blog.php?category=$1&article_id=$2 [NC] 
+In this example, matches found in parenthesis are stored in successive variables starting with $1 and going up. So, for example the URL http://mydomain.com/blog/news/4450 would be rewritten http://mydomain.com/blog.php?category_id=news&article_id=4450.
+
+Tags: .htaccess, rewriterule, mod_rewrite, apache, server, web programming, redirect, url, virtual directory, 
+64 Comments 
+57790 Views
+Comments
+Posted By: Jason Cochran on 06/30/08
+I suggest RegexDesigner to help with the hairyness of regular expressions. Why are you using RewriteRule "^(......|.......|........|.........|..........|...........|............)$" and not "RewriteRule ^(.{6,12})$"? That says any character 6 to 12 times.
+
+Posted By: Matthew Grffin on 06/30/08
+Good shortcut, Jason. I'll change that.
+
+Posted By: Edgar on 06/30/08
+Matt, Could you add more example in which you change directories? I've moved my blog from http://www.thechristianalert.org/blog/index.php/ to http://www.thechristianalert.org/index.php I have a redirect set up but I don't know if I have it correctly. It would be great to see your solution. Thanks for the Great stuff. It's been del.icio.us....
+
+Posted By: Matthew Grffin on 06/30/08
+No problem, Edgar. You should be able to use a ReWriteRule that looks like this to get the job done: RewriteRule ^blog/(.+)$ http://thechristianalert.com/$1 [R=301,NC]This is assuming you have permanently moved your content from the blog directory into the root of your site.
+
+Posted By: Edgar on 06/30/08
+Thanks Matt. This is what mine looks like: redirect 301 /blog/index.php http://www.theChristianalert.org/index.php It seems to be working. how long should we keep redirects for? 3 months? 
+
+Posted By: Matthew Griffin on 07/01/08
+As long as it's not causing any trouble, there's really no reason not to keep it up forever.
+
+Posted By: jane on 07/02/08
+nice site
+
+Posted By: Matthew Grffin on 07/02/08
+Thanks, Jane.
+
+Posted By: rizzi on 07/04/08
+Really love your site ( as if I havent said this before ;) ) ... this article is cool.... there are so many articles on the net on htaccess but this one does stand out.. coolio
+
+Posted By: Matthew Griffin on 07/06/08
+Thanks, Rizzi.
+
+Posted By: Tushar on 07/25/08
+I would like a rule so that no matter how http://sel2in.com/postit is capitalised like http://sel2in.com/POSTIT it and remaining URI goes to http://sel2in.com/postit
+
+Posted By: Tushar on 07/25/08
+I would like a rule so that no matter how http://sel2in.com/postit is capitalised like http://sel2in.com/POSTIT it and remaining URI goes to http://sel2in.com/postit
+
+Posted By: Writing Help on 08/04/08
+i like the post
+
+Posted By: Robert Dennis on 10/04/08
+Changed website from southside-speedway.com to southsidespeedway.com both point to same site. how do I redirect all to the new site?
+
+Posted By: Matthew Grffin on 10/06/08
+Robert, after you set up your .htaccess file the way I described above, you would have two lines. The first will look like this: RewriteCond %{HTTP_HOST} ^southside-speedway.com$ [NC] and the second line will look like this: RewriteRule ^(.*)$ http://southsidespeedway.com/$1 [R=301,L]
+
+Posted By: John Melanson on 10/18/08
+How about when say, you can't install a blog in the root but want anyone coming to http://example.com to see the blog which is at http://example.com BUT have the url appear as the root, not the directory? Is this possible through .Htaccess? Thanks, ~John
+
+Posted By: Paul Pearce on 11/02/08
+Great article Matthew. If I want all old links/pages (404 not found) to go to my home page is this the following correct? Options +FollowSymlinks RewriteEngine on RewriteOptions MaxRedirects=10 rewritecond %{http_host} ^portlandurbanpages.com [nc] rewriterule ^(.*)$ http://www.portlandurbanpages.com/ [r=301,nc] Thanks, Paul
+
+Posted By: Matthew Grffin on 11/03/08
+Actually, you'd probably use something more like this: ErrorDocument 404 /index.html
+
+Posted By: wayfarer_boy on 11/24/08
+Hi. Thanks for this great intro to the rewrite rule. I have a whole set of domains that point to a drupal 5 installation in the root directory, and am wanting to gradually point individual sites to my new drupal 6 installation (/drupal-6). It souns like the best way to do this would be through editing my .htaccess. However, I can't work out how to target those upgraded domains then rename the url to lose the /drupal-6 part. I have a feeling that somewhere in here is the answer, but am still unsure as I haven't seen an example that matches mine exactly. Any suggestions? (sorry if the answer is staring me in the face!)
+
+Posted By: Matthew Grffin on 11/24/08
+Wayfarer boy, if you want to target a specific domain name for redirecting, you would do something like this: RewriteCond %{HTTP_HOST} ^www.olddomain.com$ [NC] RewriteRule ^(.*)$ http://rewriteasthis.com/$1 [R=301,L] hope that helps.
+
+Posted By: wayfarer_boy on 11/25/08
+Thanks for the reply, Matthew. I've used these lines: RewriteCond %{HTTP_HOST} ^www.(site|anothersite).co.uk$ [NC] RewriteRule ^(.*)$ /drupal-6/$1 [R=301,L] and the rule correctly redirects me to ###/drupal-6/, however I'd like to hide the drupal-6 part in the url. How do I do that?
+
+Posted By: Michael Atnip on 11/26/08
+Hello... Thanks for the advice. I found this page looking for a redirect. My server host tells me to use rewrite to get Apache to parse all of my old .htm files through php. But when I do a rewrite like this: RewriteRule ^(.*).htm$ $1.php [NC] I only get directed to a new page, which really does not exist and I get a 404 error. Any way to get an htm file parsed without having to make a new page? I want to keep my old files so I do not lose my ranking on them. Thanks! Mike
+
+Posted By: Michael Atnip on 11/26/08
+Hi again: I meant to say that I need to get htm files parsed by using rewrite. My host says that addtype is not supported on their server. Thanks! Mike
+
+Posted By: Matthew Grffin on 12/01/08
+The only way I know to do this using rewriterule is the method mentioned in the first section of the article. You would have to duplicate all of your pages and add a php extension. Then you would unleash the .htaccess file and all the .htm requests would start going to the corresponding .php page.
+
+Posted By: bob on 12/22/08
+I've done what you suggested in your last comment. I renamed all files to .php and added this rewrite rule: RewriteRule ^(.+).htm$ http://my_domain.com/$1.php [R=301,NC] It redirects, but .htm still shows in the address bar and the embedded php is not executed if the user enters page.htm. Not sure what to try next.
+
+Posted By: bob on 12/22/08
+Never mind. I changed RewriteRule to rewriteRule and it works so either I misspelled it to begin with, case matters, or it takes a while to take effect. Thanks!
+
+Posted By: Matthew Grffin on 12/29/08
+Great, bob. Glad you got it working.
+
+Posted By: Steve Lee on 03/19/09
+Hello Bob, I'm trying to redirect urls while keeping the information at the end the same, an example would be, I'm trying to change this link site.com/inQuireREST/index.php/product/getProduct?productId=1012949980 into this one: site.com/index.php?main_page=product_info&products_id=1012949980 can you please help, it would be very much appreciated thank you, Steve
+
+Posted By: Steve Lee on 03/19/09
+Hello Matthew, I'm trying to redirect urls while keeping the information at the end the same, an example would be, I'm trying to change this link site.com/inQuireREST/index.php/product/getProduct?productId=1012949980 into this one: site.com/index.php?main_page=product_info&products_id=1012949980 can you please help, it would be very much appreciated (sorry I wrote Bob before I don't think before I type sometimes)thank you, Steve
+
+Posted By: Richard on 04/05/09
+Hey Matthew, is there a way to get this article to work without having to place everthing into two levels of folders? is there a way to get all requests without a username to go to index.php and all requests with username to go to profile.php all in the root folder?
+
+Posted By: Richard on 04/05/09
+I might have gotten it... this should do the trick! RewriteEngine on RewriteOptions MaxRedirects=10 RewriteRule ^([a-z0-9]+)/?$ profile.php?user_name=$1 [NC]
+
+Posted By: actonia on 06/24/09
+Hello Mathew, I have a website for which I am trying to use redirect 301 . The htaccess code is, # enable apache morRewrite module # #php_value memory_limit 16M RewriteEngine on Redirect 301 /site/Overview/3356/DesktopDefault.aspx http://xxxxxxxxx.com/vacation-rentals/florida.html RewriteBase / #RewriteRule ^www.(.*)$ $1 [QSA,L] #RewriteCond %{HTTP_HOST} ^www.(.*)$ [NC] #RewriteRule ^(.*)$ http://$1 [R=301,L] RewriteCond %{HTTP_HOST} ^www.xxxxxxx.com$ RewriteRule ^(.*)$ http://xxxxxxxx.com/$1 [L,R=301] #RewriteCond %{HTTP_HOST} !^www.xxxxxxx.com #RewriteRule (.*) http://xxxxxxxx.com/$1 [R=301,L] RewriteCond %{REQUEST_FILENAME} !-d RewriteCond %{REQUEST_FILENAME} !-f # define system languages RewriteRule ^([^//]+)/?(.{2})?/$ index.php?page=$1 [QSA,L] # define paging RewriteRule ^([^//]+)/?(.*)?/index([0-9]*).ht(m?ml?)$ index.php?page=$1&rlVareables=$2&pg=$3 [QSA,L] # define listing RewriteRule ^([^//]+)/(.*)-l([0-9]*).ht(m?ml?)$ index.php?page=$1&rlVareables=$2&listing_id=$3 [QSA,L] # define single pages RewriteRule ^([^//]+)/?(^/*)?.ht(m?ml?)$ index.php?page=$1 [QSA,L] # define other pages RewriteRule ^([^//]+)/?(.*)?/?(.*)?(.ht(m?ml?)|/+)$ index.php?page=$1&rlVareables=$2 [QSA,L] #AddHandler application/x-httpd-php5 .php .php4 .php3 .phtml I am unable to redirect my old site to new site. can you please help me. Is there any kind of conflict in the code. Please let em know if you need the actual site urls.thanks in advance.
+
+Posted By: Widewebway on 07/20/09
+Hi, I want to change the web site as http://example.com/page1.htm to http://example.com/page1 (without the .htm extension), what code showuld I use for the .htaccess?
+
+Posted By: gautam on 07/23/09
+Hi have four pages all the pages name according to start with same word but the all the name are different but then also page are not redirecting in proper way.
+
+Posted By: webscrye on 08/10/09
+For the virtual directory method, instead of setting up separate directories and removing all pages from root I believe this might be a somewhat more eloquent solution. Still toying with it though as this sort of thing is new to me. RewriteCond %{REQUEST_FILENAME} !-f RewriteCond %{REQUEST_FILENAME} !-d RewriteRule ^(.*)$ /profile.php?user=$1 Basically, if the file or directory doesn't exist, go to /profile.php?user=___ and from there you can search the DB and display profile or redirect to 404 accordingly etc.
+
+Posted By: Sal Paradise on 08/20/09
+For a myspace solution that does'nt us a virtual directory, this will work. RewriteCond %{REQUEST_FILENAME} !-d RewriteRule ^([a-zA-Z0-9_]+)$ studios/index.php?studio=$1 [NC] Obviously, you'll need to change the destination folder and file. 
+
+Posted By: Iris Hess on 09/10/09
+How can would a rewrite role for redirection of any request with a get parameter in the url e.g. index.php?paramenter1=value1&parameter2=value2&parameter3=value3& .... to index.php look link? 
+
+Posted By: web tutorials on 09/17/09
+excellent piece, got it to work finally.
+
+Posted By: Haldun on 10/18/09
+Hi, I have a website with case sensitive Folder names, how can I change sub folder names using mod_rewirte. http://mysite.com/FolderName/... to http://mysite.com/mynewfoldername/...
+
+Posted By: graham on 11/02/09
+Hi great tutorial very easy to follow. Regarding: Redirecting Your Website to a New Domain. I can't seem to grasp how to handle my situation. RewriteRule ^(.+).php$ http://new_domain.com/$1.php [R=301,NC] and RewriteRule ^old_page.php$ http://new_domain.com/new_page.php [R=301,NC] Are you saying that both these commands need to be in the same hta file? In my situation, I'm trying to 301 an entire old site to a new site. The new site has different folder and file names. I can figure out the individual 301's, but how can I deal with the old site index file? I want oldsite.com, www.oldsite.com, oldsite.com/index.php to redirect to newsite.com/index.php. I'm really stuck with this. Any help is appreciated! 
+
+Posted By: Matthew Grffin on 11/02/09
+Graham, If your old site has completely different file names and folders than the new one, you're just going to have to link the old ones to the new ones individually in the .htaccess file. So each line would look something like this: RewriteRule ^old_file.php$ http://new_domain.com/new_file.php [R=301,NC]
+
+Posted By: graham on 11/02/09
+Wow, thanks so much for your reply! I'm still working this out. Just to clarify your reply, for the index, I would use: RewriteRule ^index.php$ http://new_domain.com/ [R=301,NC] is that right? Thanks again, I'm very grateful for your tutorial and reply.
+
+Posted By: Miguel on 11/06/09
+Can extensive use of this kind of rules, degrade the performance of high trafic e-commerce websites??
+
+Posted By: Matthew Griffin on 11/06/09
+Miguel, the answer is yes, it can. Any time you add an extra stopping point in the delivery of a page, it will be slowed down. However, the slow-down using rewriterule is considerably less than other options available.
+
+Posted By: Miguel on 11/11/09
+Thanks!
+
+Posted By: Nick Duncan on 11/15/09
+Well done. I have gone through a lot of articles on .htaccess and this has got to be one of the clearest and easiest to understand. excellent work.
+
+Posted By: Andy Taylor on 12/02/09
+Hi there Great tutorial on htaccess redirects. It has enabled me to solve part of a problem I had when I launched a newly written site for our school which meant instead of being in shtml in the directory /2/ it is in php in the root so any call to the old site pages results in redirection to the new homepage. The code I used for the above is: #Start of htaccess Options +FollowSymlinks RewriteEngine on RewriteOptions MaxRedirects=10 #Redirect any old site files to new homepage RewriteRule ^2/(.+)$ http://www.accringtonstmarymagdalens.co.uk [R=301,NC] #end of htaccess file Now, what I want to do is ensure that anyone visiting is using the www. version of the site which I know the code is something along the lines of: #Redirect from non www to www RewriteCond %{http_host} ^accringtonstmarymagdalens.co.uk RewriteRule ^(.*)$ http://www.accringtonstmarymagdalens.co.uk/$1 [R=301,L] The only problem I have here though is that when I combine the 2, if someone visits the old site (/2/main.shtml for instance) they are redirected to: http://www.accringtonstmarymagdalens.co.uk/www.accringtonstmarymagdalens.co.uk Which (obviously) is incorrect. Any suggestions you could give for this would be most welcome and thanks again for writing such a brilliantly simply tutorial. Andy :o)
+
+Posted By: Matthew Griffin on 12/02/09
+Andy, I think the simplest solution to your problem is to use two separate .htaccess files. Put one in your old /2/ directory to redirect to the new site. Then put another one in the root that just redirects http:// to http://www . Hope that helps.
+
+Posted By: Andy Taylor on 12/16/09
+Hi Matthew. Thanks for the response. I managed to get the htaccess to work by using the following code:<br /> <br /> Options +FollowSymlinks<br /> RewriteEngine on<br /> RewriteOptions MaxRedirects=10<br /> <br /> RewriteCond %{http_host} ^accringtonstmarymagdalens.co.uk<br /> RewriteRule ^(.*)$ http://www.accringtonstmarymagdalens.co.uk/$1 [R=301,L]<br /> <br /> RewriteCond %{http_host} ^www.st-marymagdalens.lancs.sch.uk<br /> RewriteRule ^(.*)$ http://www.accringtonstmarymagdalens.co.uk/$1 [R=301,L]<br /> <br /> RewriteRule ^2/$ http://www.accringtonstmarymagdalens.co.uk [R=301,NC]<br /> RewriteRule ^2/(.+)$ http://www.accringtonstmarymagdalens.co.uk [R=301,NC]<br /> <br /> So that seems to of done that (even got it so I'm using the same htaccess to redirect from our given school site to the new site instead of bothering with mirroring for now).<br /> <br /> Thanks for your reply though!<br /> Andy :o)
+
+
