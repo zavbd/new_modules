@@ -1,0 +1,30 @@
+td {
+	text-align: left; 
+	font-family:Verdana; 
+	font-size:11px; 
+	color:#000; 
+}
+
+#pages {
+	text-align: center; 
+	font-family:Verdana; 
+	font-size:11px; 
+	color:red; 
+	font-weight:bold
+}
+
+#pages a { 
+	font-family:Verdana; 
+	font-size:11px; 
+	color:#009933; 
+	font-weight:bold; 
+	text-decoration: none; 
+}
+
+#pages a:hover {
+	text-decoration: underline; 
+}
+
+#pages span { 
+	padding: 2px; 
+}
